@@ -9,7 +9,7 @@ description = "Wasm code validator"
 
 [dependencies]
 parity-wasm = { version = "0.31", default-features = false }
-hashbrown = { version = "0.1.8", optional = true }
+hashbrown = { version = "0.1.8", default-features = false }
 
 [dev-dependencies]
 assert_matches = "1.1"
