@@ -1,4 +1,5 @@
-use std::rc::Rc;
+//use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::Cell;
 use value::RuntimeValue;
 use Error;
@@ -11,7 +12,7 @@ use parity_wasm::elements::{ValueType as EValueType};
 ///
 /// [`GlobalInstance`]: struct.GlobalInstance.html
 #[derive(Clone, Debug)]
-pub struct GlobalRef(Rc<GlobalInstance>);
+pub struct GlobalRef(Arc<GlobalInstance>);
 
 impl ::std::ops::Deref for GlobalRef {
 	type Target = GlobalInstance;
@@ -43,7 +44,7 @@ impl GlobalInstance {
 	/// Since it is possible to export only immutable globals,
 	/// users likely want to set `mutable` to `false`.
 	pub fn alloc(val: RuntimeValue, mutable: bool) -> GlobalRef {
-		GlobalRef(Rc::new(GlobalInstance {
+		GlobalRef(Arc::new(GlobalInstance {
 			val: Cell::new(val),
 			mutable,
 		}))
@@ -87,3 +88,6 @@ impl GlobalInstance {
 		self.value_type().into_elements()
 	}
 }
+
+unsafe impl Sync for GlobalRef {}
+unsafe impl Sync for GlobalInstance {}

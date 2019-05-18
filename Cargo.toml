@@ -11,11 +11,12 @@ keywords = ["wasm", "webassembly", "bytecode", "interpreter"]
 exclude = [ "/res/*", "/tests/*", "/fuzz/*", "/benches/*" ]
 
 [dependencies]
-parity-wasm = "0.31"
-byteorder = "1.0"
-memory_units = "0.3.0"
-nan-preserving-float = "0.1.0"
+parity-wasm             = { version = "0.31", default-features = false }
+byteorder		= { git = "https://github.com/baidu/rust-sgx-sdk" }
+memory_units 		= "0.4.0"
+nan-preserving-float 	= { git = "https://github.com/baidu/rust-sgx-sdk" }
+serde 			= { git = "https://github.com/baidu/rust-sgx-sdk" }
+serde_derive 		= { git = "https://github.com/baidu/rust-sgx-sdk" }
 
-[dev-dependencies]
-assert_matches = "1.1"
-wabt = "0.4"
+[target.'cfg(not(target_env = "sgx"))'.dependencies]
+sgx_tstd = { git = "https://github.com/baidu/rust-sgx-sdk" }

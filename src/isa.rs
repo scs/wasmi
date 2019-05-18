@@ -35,7 +35,7 @@
 //! # Locals
 //!
 //! In a plain stack machine local variables and arguments live on the stack. Instead of
-//! accessing predifined locals slots in a plain stack machine locals are addressed relative
+//! accessing predefined locals slots in a plain stack machine locals are addressed relative
 //! to the current stack pointer. Because of this instead of taking an index of a local
 //! in {get,set,tee}_local operations, they take a relative depth as immediate. This works
 //! because at each instruction we always know the current stack height.
@@ -59,7 +59,7 @@
 //! # Differences from Wasm
 //!
 //! - There is no `nop` instruction.
-//! - All control flow strucutres are flattened to plain gotos.
+//! - All control flow structures are flattened to plain gotos.
 //! - Implicit returns via reaching function scope `End` are replaced with an explicit `return` instruction.
 //! - Locals live on the value stack now.
 //! - Load/store instructions doesn't take `align` parameter.
@@ -71,6 +71,8 @@
 ///
 /// Note that this is a `enum` since Wasm doesn't support multiple return
 /// values at the moment.
+use std::prelude::v1::*;
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Keep {
@@ -93,7 +95,6 @@ pub struct Target {
 	pub drop_keep: DropKeep,
 }
 
-#[allow(unused)] // TODO: Remove
 #[derive(Debug, Clone, PartialEq)]
 pub enum Instruction {
 	/// Push a local variable or an argument from the specified depth.

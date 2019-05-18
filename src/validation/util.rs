@@ -1,3 +1,4 @@
+use std::prelude::v1::*;
 use parity_wasm::elements::{Local, ValueType};
 use validation::Error;
 

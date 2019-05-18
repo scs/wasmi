@@ -1,4 +1,6 @@
-use std::rc::{Rc, Weak};
+use std::prelude::v1::*;
+//use std::rc::{Rc, Weak};
+use std::sync::{Arc, Weak};
 use std::fmt;
 use parity_wasm::elements::Local;
 use {Trap, TrapKind, Signature};
@@ -15,7 +17,7 @@ use isa;
 ///
 /// [`FuncInstance`]: struct.FuncInstance.html
 #[derive(Clone, Debug)]
-pub struct FuncRef(Rc<FuncInstance>);
+pub struct FuncRef(Arc<FuncInstance>);
 
 impl ::std::ops::Deref for FuncRef {
 	type Target = FuncInstance;
@@ -26,7 +28,7 @@ impl ::std::ops::Deref for FuncRef {
 
 /// Runtime representation of a function.
 ///
-/// Functions are the unit of orgianization of code in WebAssembly. Each function takes a sequence of values
+/// Functions are the unit of organization of code in WebAssembly. Each function takes a sequence of values
 /// as parameters and either optionally return a value or trap.
 /// Functions can call other function including itself (i.e recursive calls are allowed) and imported functions
 /// (i.e functions defined in another module or by the host environment).
@@ -43,9 +45,9 @@ pub struct FuncInstance(FuncInstanceInternal);
 #[derive(Clone)]
 pub(crate) enum FuncInstanceInternal {
 	Internal {
-		signature: Rc<Signature>,
+		signature: Arc<Signature>,
 		module: Weak<ModuleInstance>,
-		body: Rc<FuncBody>,
+		body: Arc<FuncBody>,
 	},
 	Host {
 		signature: Signature,
@@ -89,7 +91,7 @@ impl FuncInstance {
 			signature,
 			host_func_index,
 		};
-		FuncRef(Rc::new(FuncInstance(func)))
+		FuncRef(Arc::new(FuncInstance(func)))
 	}
 
 	/// Returns [signature] of this function instance.
@@ -110,20 +112,20 @@ impl FuncInstance {
 
 	pub(crate) fn alloc_internal(
 		module: Weak<ModuleInstance>,
-		signature: Rc<Signature>,
+		signature: Arc<Signature>,
 		body: FuncBody,
 	) -> FuncRef {
 		let func = FuncInstanceInternal::Internal {
 			signature,
 			module: module,
-			body: Rc::new(body),
+			body: Arc::new(body),
 		};
-		FuncRef(Rc::new(FuncInstance(func)))
+		FuncRef(Arc::new(FuncInstance(func)))
 	}
 
-	pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
+	pub(crate) fn body(&self) -> Option<Arc<FuncBody>> {
 		match *self.as_internal() {
-			FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
+			FuncInstanceInternal::Internal { ref body, .. } => Some(Arc::clone(body)),
 			FuncInstanceInternal::Host { .. } => None,
 		}
 	}

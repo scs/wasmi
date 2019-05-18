@@ -1,3 +1,4 @@
+use std::prelude::v1::*;
 use std::u32;
 use parity_wasm::elements::{Instruction, BlockType, ValueType, TableElementType, Func, FuncBody};
 use common::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};

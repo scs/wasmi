@@ -95,6 +95,12 @@
 //! ```
 
 #![warn(missing_docs)]
+#![cfg_attr(not(target_env = "sgx"), no_std)]
+#![cfg_attr(target_env = "sgx", feature(rustc_private))]
+
+#[cfg(not(target_env = "sgx"))]
+#[macro_use]
+extern crate sgx_tstd as std;
 
 #[cfg(test)]
 extern crate wabt;
@@ -106,8 +112,13 @@ extern crate parity_wasm;
 extern crate byteorder;
 extern crate memory_units as memory_units_crate;
 
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+
 pub extern crate nan_preserving_float;
 
+use std::prelude::v1::*;
 use std::fmt;
 use std::error;
 
@@ -115,7 +126,7 @@ use std::error;
 ///
 /// Under some conditions, wasm execution may produce a `Trap`, which immediately aborts execution.
 /// Traps can't be handled by WebAssembly code, but are reported to the embedder.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Trap {
 	kind: TrapKind,
 }
@@ -149,7 +160,7 @@ impl error::Error for Trap {
 /// See [`Trap`] for details.
 ///
 /// [`Trap`]: struct.Trap.html
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum TrapKind {
 	/// Wasm code executed `unreachable` opcode.
 	///
@@ -213,26 +224,26 @@ pub enum TrapKind {
 	/// [`Signature`]: struct.Signature.html
 	UnexpectedSignature,
 
-	/// Error specified by the host.
-	///
-	/// Typically returned from an implementation of [`Externals`].
-	///
-	/// [`Externals`]: trait.Externals.html
-	Host(Box<host::HostError>),
+	// Error specified by the host.
+	//
+	// Typically returned from an implementation of [`Externals`].
+	//
+	// [`Externals`]: trait.Externals.html
+	//Host(Box<host::HostError>),
 }
 
-impl TrapKind {
-	/// Whether this trap is specified by the host.
-	pub fn is_host(&self) -> bool {
-		match self {
-			&TrapKind::Host(_) => true,
-			_ => false,
-		}
-	}
-}
+//impl TrapKind {
+//	/// Whether this trap is specified by the host.
+//	pub fn is_host(&self) -> bool {
+//		match self {
+//			&TrapKind::Host(_) => true,
+//			_ => false,
+//		}
+//	}
+//}
 
 /// Internal interpreter error.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Error {
 	/// Module validation error. Might occur only at load time.
 	Validation(String),
@@ -251,30 +262,30 @@ pub enum Error {
 	Value(String),
 	/// Trap.
 	Trap(Trap),
-	/// Custom embedder error.
-	Host(Box<host::HostError>),
+	// Custom embedder error.
+	//Host(Box<host::HostError>),
 }
 
-impl Error {
-	/// Returns [`HostError`] if this `Error` represents some host error.
-	///
-	/// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
-	///
-	/// [`HostError`]: trait.HostError.html
-	/// [`Host`]: enum.Error.html#variant.Host
-	/// [`Trap`]: enum.Error.html#variant.Trap
-	/// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
-	pub fn as_host_error(&self) -> Option<&host::HostError> {
-		match *self {
-			Error::Host(ref host_err) => Some(&**host_err),
-			Error::Trap(ref trap) => match *trap.kind() {
-				TrapKind::Host(ref host_err) => Some(&**host_err),
-				_ => None,
-			}
-			_ => None,
-		}
-	}
-}
+//impl Error {
+//	/// Returns [`HostError`] if this `Error` represents some host error.
+//	///
+//	/// I.e. if this error have variant [`Host`] or [`Trap`][`Trap`] with [host][`TrapKind::Host`] error.
+//	///
+//	/// [`HostError`]: trait.HostError.html
+//	/// [`Host`]: enum.Error.html#variant.Host
+//	/// [`Trap`]: enum.Error.html#variant.Trap
+//	/// [`TrapKind::Host`]: enum.TrapKind.html#variant.Host
+//	pub fn as_host_error(&self) -> Option<&host::HostError> {
+//		match *self {
+//			//Error::Host(ref host_err) => Some(&**host_err),
+//			Error::Trap(ref trap) => match *trap.kind() {
+//				//TrapKind::Host(ref host_err) => Some(&**host_err),
+//				_ => None,
+//			}
+//			_ => None,
+//		}
+//	}
+//}
 
 impl Into<String> for Error {
 	fn into(self) -> String {
@@ -287,7 +298,7 @@ impl Into<String> for Error {
 			Error::Global(s) => s,
 			Error::Value(s) => s,
 			Error::Trap(s) => format!("trap: {:?}", s),
-			Error::Host(e) => format!("user: {}", e),
+			//Error::Host(e) => format!("user: {}", e),
 		}
 	}
 }
@@ -303,7 +314,7 @@ impl fmt::Display for Error {
 			Error::Global(ref s) => write!(f, "Global: {}", s),
 			Error::Value(ref s) => write!(f, "Value: {}", s),
 			Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
-			Error::Host(ref e) => write!(f, "User: {}", e),
+			//Error::Host(ref e) => write!(f, "User: {}", e),
 		}
 	}
 }
@@ -319,22 +330,22 @@ impl error::Error for Error {
 			Error::Global(ref s) => s,
 			Error::Value(ref s) => s,
 			Error::Trap(_) => "Trap",
-			Error::Host(_) => "Host error",
+			//Error::Host(_) => "Host error",
 		}
 	}
 }
 
-impl<U> From<U> for Error where U: host::HostError + Sized {
-	fn from(e: U) -> Self {
-		Error::Host(Box::new(e))
-	}
-}
-
-impl<U> From<U> for Trap where U: host::HostError + Sized {
-	fn from(e: U) -> Self {
-		Trap::new(TrapKind::Host(Box::new(e)))
-	}
-}
+//impl<U> From<U> for Error where U: host::HostError + Sized {
+//	fn from(e: U) -> Self {
+//		Error::Host(Box::new(e))
+//	}
+//}
+//
+//impl<U> From<U> for Trap where U: host::HostError + Sized {
+//	fn from(e: U) -> Self {
+//		Trap::new(TrapKind::Host(Box::new(e)))
+//	}
+//}
 
 impl From<Trap> for Error {
 	fn from(e: Trap) -> Error {
@@ -374,7 +385,7 @@ mod tests;
 pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
 pub use self::table::{TableInstance, TableRef};
 pub use self::value::{RuntimeValue, FromRuntimeValue};
-pub use self::host::{Externals, NopExternals, HostError, RuntimeArgs};
+pub use self::host::{Externals, NopExternals, RuntimeArgs};
 pub use self::imports::{ModuleImportResolver, ImportResolver, ImportsBuilder};
 pub use self::module::{ModuleInstance, ModuleRef, ExternVal, NotStartedModuleRef};
 pub use self::global::{GlobalInstance, GlobalRef};

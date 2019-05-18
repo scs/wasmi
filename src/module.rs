@@ -1,6 +1,8 @@
+use std::prelude::v1::*;
 use runner::check_function_args;
 use Trap;
-use std::rc::Rc;
+//use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::RefCell;
 use std::fmt;
 use std::collections::HashMap;
@@ -30,7 +32,7 @@ use memory_units::Pages;
 ///
 /// [`ModuleInstance`]: struct.ModuleInstance.html
 #[derive(Clone, Debug)]
-pub struct ModuleRef(pub(crate) Rc<ModuleInstance>);
+pub struct ModuleRef(pub(crate) Arc<ModuleInstance>);
 
 impl ::std::ops::Deref for ModuleRef {
 	type Target = ModuleInstance;
@@ -149,13 +151,14 @@ impl ExternVal {
 /// [`invoke_export`]: #method.invoke_export
 #[derive(Debug)]
 pub struct ModuleInstance {
-	signatures: RefCell<Vec<Rc<Signature>>>,
+	signatures: RefCell<Vec<Arc<Signature>>>,
 	tables: RefCell<Vec<TableRef>>,
 	funcs: RefCell<Vec<FuncRef>>,
 	memories: RefCell<Vec<MemoryRef>>,
 	globals: RefCell<Vec<GlobalRef>>,
 	exports: RefCell<HashMap<String, ExternVal>>,
 }
+
 
 impl ModuleInstance {
 	fn default() -> Self {
@@ -185,7 +188,7 @@ impl ModuleInstance {
 		self.funcs.borrow().get(idx as usize).cloned()
 	}
 
-	pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Rc<Signature>> {
+	pub(crate) fn signature_by_index(&self, idx: u32) -> Option<Arc<Signature>> {
 		self.signatures.borrow().get(idx as usize).cloned()
 	}
 
@@ -193,7 +196,7 @@ impl ModuleInstance {
 		self.funcs.borrow_mut().push(func);
 	}
 
-	fn push_signature(&self, signature: Rc<Signature>) {
+	fn push_signature(&self, signature: Arc<Signature>) {
 		self.signatures.borrow_mut().push(signature)
 	}
 
@@ -218,10 +221,10 @@ impl ModuleInstance {
 		extern_vals: I,
 	) -> Result<ModuleRef, Error> {
 		let module = loaded_module.module();
-		let instance = ModuleRef(Rc::new(ModuleInstance::default()));
+		let instance = ModuleRef(Arc::new(ModuleInstance::default()));
 
 		for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
-			let signature = Rc::new(Signature::from_elements(ty));
+			let signature = Arc::new(Signature::from_elements(ty));
 			instance.push_signature(signature);
 		}
 
@@ -316,7 +319,7 @@ impl ModuleInstance {
 					code: code,
 				};
 				let func_instance =
-					FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+					FuncInstance::alloc_internal(Arc::downgrade(&instance.0), signature, func_body);
 				instance.push_func(func_instance);
 			}
 		}
@@ -565,7 +568,7 @@ impl ModuleInstance {
 	///
 	/// - there are no export with a given name or this export is not a function,
 	/// - given arguments doesn't match to function signature,
-	/// - trap occured at the execution time,
+	/// - trap occurred at the execution time,
 	///
 	/// # Examples
 	///
@@ -643,7 +646,7 @@ impl ModuleInstance {
 ///
 /// You can still access not fully initialized instance by calling [`not_started_instance`],
 /// but keep in mind, that this is sort of escape hatch: module really might depend on initialization
-/// done in `start` function. It's definetely not recommended to call any exports on [`ModuleRef`]
+/// done in `start` function. It's definitely not recommended to call any exports on [`ModuleRef`]
 /// returned by this function.
 ///
 /// If you sure, that there is no `start` function (e.g. because you created it without one), you can
@@ -832,3 +835,7 @@ mod tests {
 		);
 	}
 }
+
+unsafe impl Sync for ModuleRef {}
+unsafe impl Sync for ExternVal {}
+unsafe impl Sync for ModuleInstance {}

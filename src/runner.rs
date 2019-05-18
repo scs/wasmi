@@ -1,3 +1,4 @@
+use std::prelude::v1::*;
 use std::ops;
 use std::{u32, usize};
 use std::fmt;
@@ -37,14 +38,15 @@ pub enum InstructionOutcome {
 }
 
 #[derive(PartialEq, Eq)]
+#[allow(dead_code)]
 /// Function execution state, related to pause and resume.
 pub enum InterpreterState {
 	/// The interpreter has been created, but has not been executed.
 	Initialized,
 	/// The interpreter has started execution, and cannot be called again if it exits normally, or no Host traps happened.
 	Started,
-	/// The interpreter has been executed, and returned a Host trap. It can resume execution by providing back a return
-	/// value.
+	// The interpreter has been executed, and returned a Host trap. It can resume execution by providing back a return
+	// value.
 	Resumable(Option<ValueType>),
 }
 
@@ -205,9 +207,9 @@ impl Interpreter {
 							let return_val = match FuncInstance::invoke(&nested_func, &args, externals) {
 								Ok(val) => val,
 								Err(trap) => {
-									if trap.kind().is_host() {
-										self.state = InterpreterState::Resumable(nested_func.signature().return_type());
-									}
+									//if trap.kind().is_host() {
+									//	self.state = InterpreterState::Resumable(nested_func.signature().return_type());
+									//}
 									return Err(trap);
 								},
 							};

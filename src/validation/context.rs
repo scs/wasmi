@@ -1,3 +1,4 @@
+use std::prelude::v1::*;
 use parity_wasm::elements::{MemoryType, TableType, GlobalType, BlockType, ValueType, FunctionType};
 use validation::Error;
 

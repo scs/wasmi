@@ -1,8 +1,10 @@
+use std::prelude::v1::*;
 use std::u32;
 use std::ops::Range;
 use std::cmp;
 use std::fmt;
-use std::rc::Rc;
+//use std::rc::Rc;
+use std::sync::Arc;
 use std::cell::{Cell, RefCell};
 use parity_wasm::elements::ResizableLimits;
 use Error;
@@ -26,7 +28,7 @@ const LINEAR_MEMORY_MAX_PAGES: Pages = Pages(65536);
 /// [`MemoryInstance`]: struct.MemoryInstance.html
 ///
 #[derive(Clone, Debug)]
-pub struct MemoryRef(Rc<MemoryInstance>);
+pub struct MemoryRef(Arc<MemoryInstance>);
 
 impl ::std::ops::Deref for MemoryRef {
 	type Target = MemoryInstance;
@@ -111,7 +113,7 @@ impl MemoryInstance {
 		validate_memory(initial, maximum).map_err(Error::Memory)?;
 
 		let memory = MemoryInstance::new(initial, maximum);
-		Ok(MemoryRef(Rc::new(memory)))
+		Ok(MemoryRef(Arc::new(memory)))
 	}
 
 	/// Create new linear memory instance.
@@ -576,3 +578,6 @@ mod tests {
 		});
 	}
 }
+
+unsafe impl Sync for MemoryRef {}
+unsafe impl Sync for MemoryInstance {}
